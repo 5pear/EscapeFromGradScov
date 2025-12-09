@@ -3,7 +3,7 @@ import javax.swing.JFrame;
 public class GameFrame extends JFrame {
 
     public GameFrame() {
-        setTitle("EscapeFromGradScov - 1F Test");
+        setTitle("Escape From GradScov");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
 
