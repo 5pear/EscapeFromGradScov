@@ -130,22 +130,9 @@ public class StartPanel extends JPanel implements KeyListener {
     
     private void openSettingsDialog() {
         JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
+        if (parent == null) return;
 
-        JDialog dialog = new JDialog(parent, "게임 설정", true);
-        dialog.setLayout(new BorderLayout());
-        dialog.setSize(400, 300);
-        dialog.setLocationRelativeTo(parent);
-
-        JLabel label = new JLabel("여기에 설정 UI 넣기");
-        label.setHorizontalAlignment(SwingConstants.CENTER);
-        dialog.add(label, BorderLayout.CENTER);
-
-        JButton closeBtn = new JButton("닫기");
-        closeBtn.addActionListener(e -> dialog.dispose());
-        JPanel bottom = new JPanel();
-        bottom.add(closeBtn);
-        dialog.add(bottom, BorderLayout.SOUTH);
-
+        SettingsDialog dialog = new SettingsDialog(parent);
         dialog.setVisible(true);
     }
     
