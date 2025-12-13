@@ -1,14 +1,18 @@
 import java.awt.Point;
+import java.util.function.Consumer;
+
 import javax.swing.JOptionPane;
 
 public class GameContext {
 
     private GameMap currentMap;
     private final Player player;
+    private final GamePanel panel; // [커스텀메세지] 패널 참조
 
-    public GameContext(GameMap currentMap, Player player) {
+    public GameContext(GameMap currentMap, Player player, GamePanel panel) {
         this.currentMap = currentMap;
         this.player = player;
+        this.panel = panel;
     }
 
     public GameMap getCurrentMap() {
@@ -18,9 +22,17 @@ public class GameContext {
     public Player getPlayer() {
         return player;
     }
-
-    public void showMessage(String text) {
-        JOptionPane.showMessageDialog(null, text);
+    //[커스텀메세지]그냥 커스텀메세지 호출
+    public void showMessage(String text) {        
+    	panel.showDialog(text, null);
+    }
+    // [커스텀메세지] 상호작용 메시지 (문 이동 등)
+    public void showMessage(String text, Runnable nextAction) {
+        panel.showDialog(text, nextAction);
+    }
+    // [QNPC]
+    public void showQuestion(String question, String[] options, Consumer<Integer> onAnswer) {
+        panel.showQuestion(question, options, onAnswer);
     }
 
     // 문/상호작용에서 맵 교체 시 호출
@@ -54,6 +66,9 @@ public class GameContext {
         Point safe = findSafeSpawnNear(baseX, baseY, pw, ph);
         player.setX(safe.x);
         player.setY(safe.y);
+        // [커스텀메세지] 패널에게 "맵이 바뀌었으니 화면도 바꿔라"라고 알림
+        panel.setMap(currentMap);
+    
     }
 
     // 기준 좌표 근처에서 이동 가능한 지점 탐색

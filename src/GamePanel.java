@@ -1,5 +1,7 @@
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Point;
@@ -8,6 +10,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.util.function.Consumer;
 
 import javax.swing.JPanel;
 import javax.swing.Timer;
@@ -23,6 +26,22 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
     // 패널(표시 영역) 크기 = 첫 맵(1F 복도) 이미지 크기
     private final int viewWidth;
     private final int viewHeight;
+    
+    // [커스텀메세지] 대화창 관련 변수
+    private boolean isDialogVisible = false; // 대화창이 켜져 있는가?
+    private String dialogText = "";          // 현재 보여줄 대사
+    
+    // [커스텀메세지]폰트 설정 (맑은 고딕, 굵게, 20크기)
+    private final Font font = new Font("Malgun Gothic", Font.BOLD, 20);
+    // [커스텀메세지] 대화창이 닫히면 실행할 행동을 저장하는 변수
+    private Runnable onDialogClose;
+    // [QNPC] 질문/선택지 관련 변수
+    private boolean isQuestionMode = false;      // 질문 모드인가?
+    private String[] currentOptions;             // 선택지들 {"1번", "2번", "3번"}
+    private int selectedOptionIndex = 0;         // 현재 선택한 번호
+    private Consumer<Integer> onAnswer;          // 정답 선택 시 실행할 행동
+
+ 
 
     public GamePanel() {
         setFocusable(true);
@@ -52,6 +71,43 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
         // 5. 게임 루프
         timer = new Timer(16, this);
         timer.start();
+    }
+    
+    // [커스텀메세지] 외부에서 대화창을 띄우는 메서드
+    public void showDialog(String text, Runnable onClose) {
+        this.dialogText = text;
+        this.onDialogClose = onClose; // 할 일을 기억해둠(문넘기 버그 방지)
+        this.isDialogVisible = true;
+        // 대화창이 떴을 때 키 입력 상태 초기화 (계속 걷는 버그 방지)
+        for(int i=0; i<keys.length; i++) keys[i] = false;
+    }
+
+    // [커스텀메세지] 대화창 닫기
+    public void closeDialog() {
+        this.isDialogVisible = false;
+        
+        // 닫힐 때, 기억해둔 행동이 있다면 실행!
+        if (this.onDialogClose != null) {
+            this.onDialogClose.run();
+            this.onDialogClose = null; // 실행 후 비워둠
+        }
+    }
+    // [QNPC] 질문창 띄우기
+    public void showQuestion(String question, String[] options, Consumer<Integer> onAnswer) {
+        this.dialogText = question;      // 질문 텍스트는 기존 변수 재활용
+        this.currentOptions = options;
+        this.onAnswer = onAnswer;
+        this.selectedOptionIndex = 0;    // 0번부터 선택 시작
+        this.isQuestionMode = true;      // 질문 모드 ON
+        
+        // 키 입력 초기화
+        for(int i=0; i<keys.length; i++) keys[i] = false;
+    }
+
+    // [QNPC] 맵 변경 (외부 호출용)
+    public void setMap(GameMap map) {
+        this.currentMap = map;
+        repaint();
     }
 
     @Override
@@ -103,14 +159,16 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
             null
         );
         
-     // 물체npc상호작용~
+     
+        //[QNPC/NPC]
         if (currentMap != null) {
             for (Interactable obj : currentMap.getInteractables()) {
-                // obj가 Npc 클래스의 인스턴스인지 확인
                 if (obj instanceof Npc) {
-                    Npc npc = (Npc) obj;
-                    // Npc 클래스에 만들어둔 draw 메서드 호출
-                    npc.draw(g2, camX, camY);
+                    ((Npc) obj).draw(g2, camX, camY);
+                }
+                // [추가] QuizNpc
+                else if (obj instanceof QuizNpc) {
+                    ((QuizNpc) obj).draw(g2, camX, camY);
                 }
             }
         }
@@ -121,16 +179,62 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
 
         g2.setColor(Color.RED);
         g2.fillRect(drawPX, drawPY, player.getWidth(), player.getHeight());
+        
+     // [커스텀메세지] 대화창 그리기 (맨 마지막에 그려야 맨 위에 뜸)       
+        if (isDialogVisible || isQuestionMode) {
+            // 공통 박스 그리기
+            int boxHeight = 150;
+            int boxY = viewHeight - boxHeight - 20;
+
+            g2.setColor(new Color(0, 0, 0, 200));
+            g2.fillRoundRect(20, boxY, viewWidth - 40, boxHeight, 20, 20);
+
+            g2.setColor(Color.WHITE);
+            g2.setStroke(new BasicStroke(3));
+            g2.drawRoundRect(20, boxY, viewWidth - 40, boxHeight, 20, 20);
+            
+            g2.setFont(font);
+
+            // [A] 질문(퀴즈) 모드일 때 그리기
+            if (isQuestionMode) {
+                // 질문 내용
+                g2.drawString("Q. " + dialogText, 50, boxY + 40);
+
+                // 선택지 그리기
+                g2.setFont(new Font("Malgun Gothic", Font.PLAIN, 18));
+                for (int i = 0; i < currentOptions.length; i++) {
+                    int optY = boxY + 80 + (i * 25);
+                    
+                    if (i == selectedOptionIndex) {
+                        g2.setColor(Color.YELLOW); // 선택된 건 노란색
+                        g2.drawString("▶ " + currentOptions[i], 50, optY);
+                    } else {
+                        g2.setColor(Color.WHITE);
+                        g2.drawString("   " + currentOptions[i], 50, optY);
+                    }
+                }
+            } 
+            // [B] 일반 대화 모드일 때 그리기
+            else {
+                g2.drawString(dialogText, 50, boxY + 60);
+                g2.setFont(new Font("Arial", Font.PLAIN, 12));
+                g2.drawString("PRESS SPACE TO CLOSE", viewWidth - 200, viewHeight - 40);
+            }
+        }
     }
+    
 
 
 
     // ===============================
     //           게임 로직
     // ===============================
+    //[이동버그수정]
     @Override
     public void actionPerformed(ActionEvent e) {
-        updatePlayer();
+    	if (!isDialogVisible) {
+            updatePlayer();
+        }
         repaint();
     }
 
@@ -175,7 +279,10 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
         return (keyCode >= 0 && keyCode < keys.length && keys[keyCode]);
     }
 
-
+    // [커스템메세지] 외부(GameContext)에서 맵을 강제로 바꿀 때 사용
+    public void setMap(GameMap map) {
+        this.currentMap = map;
+    }
 
     // ===============================
     //        상호작용 관련
@@ -223,9 +330,8 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
         }
 
         if (target != null) {
-            GameContext ctx = new GameContext(currentMap, player);
-            target.interact(ctx);
-            currentMap = ctx.getCurrentMap();
+            GameContext ctx = new GameContext(currentMap, player,this);
+            target.interact(ctx);         
         }
     }
 
@@ -260,6 +366,36 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
     @Override
     public void keyPressed(KeyEvent e) {
         int code = e.getKeyCode();
+        
+        // [QNPC] 질문 모드일 때 키 처리 (방향키로 선택)
+        if (isQuestionMode) {
+            if (code == KeyEvent.VK_UP) {
+                selectedOptionIndex--;
+                if (selectedOptionIndex < 0) selectedOptionIndex = currentOptions.length - 1;
+            }
+            else if (code == KeyEvent.VK_DOWN) {
+                selectedOptionIndex++;
+                if (selectedOptionIndex >= currentOptions.length) selectedOptionIndex = 0;
+            }
+            else if (code == KeyEvent.VK_SPACE || code == KeyEvent.VK_ENTER) {
+                isQuestionMode = false; // 질문창 닫기
+                if (onAnswer != null) {
+                    onAnswer.accept(selectedOptionIndex); // 선택한 번호를 알려줌
+                }
+            }
+            return; // 다른 키 입력 무시
+        }
+        
+        
+        
+        
+        // [커스텀메세지] 대화창이 켜져있을 때 처리
+        if (isDialogVisible) {
+            if (code == KeyEvent.VK_SPACE || code == KeyEvent.VK_ENTER) {
+                closeDialog(); // 스페이스바 누르면 대화창 닫기
+            }
+            return; // 이동 키 입력 등을 무시하고 여기서 끝냄
+        }
         if (code >= 0 && code < keys.length)
             keys[code] = true;
 

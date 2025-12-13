@@ -28,8 +28,16 @@ public class Door implements Interactable {
     @Override
     public void interact(GameContext context) {
         if (message != null && !message.isEmpty()) {
-            context.showMessage(message);
+        	// [커스텀메세지] 메시지>확인> 맵 이동
+            context.showMessage(message, () -> {
+                context.changeMap(targetMapId);
+            });
         }
-        context.changeMap(targetMapId);
+        else {
+            // 그냥 바로 이동
+            context.changeMap(targetMapId);
+        }
+        
+        
     }
 }

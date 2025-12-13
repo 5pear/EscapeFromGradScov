@@ -1,32 +1,23 @@
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import javax.swing.JOptionPane; // 입력창을 위해 필요
 
 public class Npc implements Interactable {
 
-    private String name;
     private int x, y;
-    private int width, height;
+    private int width = 20;
+    private int height = 28;
+    
+    private String name;
+    private String[] dialogues; // 여러 줄의 대사 목록
+    private int dialogIndex = 0; // 현재 말할 대사 번호
 
-    // 퀴즈 
-    private String question;   // 질문
-    private String answer;     // 정답
-    private String correctMsg; // 맞았을 때 대사
-    private String wrongMsg;   // 틀렸을 때 대사
-
-    // 생성자: 위치, 이름, 질문, 정답, 성공메시지, 실패메시지
-    public Npc(int x, int y, String name, String question, String answer, String correctMsg, String wrongMsg) {
+    // 생성자: 위치, 이름, 대사들(가변 인자)
+    public Npc(int x, int y, String name, String... dialogues) {
         this.x = x;
         this.y = y;
-        this.width = 20;
-        this.height = 28;
         this.name = name;
-        
-        this.question = question;
-        this.answer = answer;
-        this.correctMsg = correctMsg;
-        this.wrongMsg = wrongMsg;
+        this.dialogues = dialogues;
     }
 
     @Override
@@ -34,33 +25,30 @@ public class Npc implements Interactable {
         return new Rectangle(x, y, width, height);
     }
 
-    // 입력창 띄우기 및 정답 확인
     @Override
     public void interact(GameContext context) {
-        // 1. 입력창 띄우기
-        String input = JOptionPane.showInputDialog(null, name + ": " + question);
+        // 대사가 없으면 아무것도 안 함
+        if (dialogues == null || dialogues.length == 0) return;
 
-        // 2. 취소 버튼을 눌렀거나 내용을 입력하지 않은 경우 무시
-        if (input == null || input.trim().isEmpty()) {
-            return;
-        }
+        // 1. 현재 순서의 대사를 커스텀 대화창으로 출력
+        // (이름: 내용) 형식으로 보여줌
+        context.showMessage(name + ": " + dialogues[dialogIndex]);
 
-        // 3. 정답 비교 (공백 제거 후 확인)
-        if (input.trim().equals(answer)) {
-            // 정답인 경우
-            context.showMessage(name + ": " + correctMsg);
-        } else {
-            // 오답인 경우
-            context.showMessage(name + ": " + wrongMsg);
+        // 2. 다음 대사로 인덱스 넘기기
+        dialogIndex++;
+        
+        // 3. 대사가 끝까지 갔으면 다시 처음(0번)으로 돌아옴
+        if (dialogIndex >= dialogues.length) {
+            dialogIndex = 0;
         }
     }
 
-    // 그리기 기능
+    // 일반 NPC는 파란색으로 그리기
     public void draw(Graphics2D g, int camX, int camY) {
         int screenX = x - camX;
         int screenY = y - camY;
 
-        g.setColor(Color.BLUE);
+        g.setColor(Color.BLUE); // 파란색
         g.fillRect(screenX, screenY, width, height);
         
         g.setColor(Color.WHITE);
