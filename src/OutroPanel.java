@@ -7,6 +7,7 @@ import java.util.List;
 public class OutroPanel extends JPanel {
 
     private final List<String> credits = new ArrayList<>();
+
     private int yOffset;
     private int speed = 1;
     private boolean fast = false;
@@ -16,7 +17,7 @@ public class OutroPanel extends JPanel {
 
     private float thankYouAlpha = 0f;
     private boolean showThankYou = false;
-    private boolean restartTriggered = false; // 🔥 핵심
+    private boolean restartTriggered = false;
 
     private final Font creditFont = new Font("Dialog", Font.BOLD, 28);
     private final Font thankYouFont = new Font("Dialog", Font.BOLD, 48);
@@ -44,13 +45,27 @@ public class OutroPanel extends JPanel {
         scrollTimer.start();
 
         addMouseListener(new MouseAdapter() {
-            @Override public void mousePressed(MouseEvent e) { fast = true; }
-            @Override public void mouseReleased(MouseEvent e) { fast = false; }
+            @Override
+            public void mousePressed(MouseEvent e) {
+                fast = true;
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+                fast = false;
+            }
         });
 
         addKeyListener(new KeyAdapter() {
-            @Override public void keyPressed(KeyEvent e) { fast = true; }
-            @Override public void keyReleased(KeyEvent e) { fast = false; }
+            @Override
+            public void keyPressed(KeyEvent e) {
+                fast = true;
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+                fast = false;
+            }
         });
     }
 
@@ -78,7 +93,8 @@ public class OutroPanel extends JPanel {
     }
 
     private void startThankYou(GameFrame frame) {
-        if (showThankYou) return; // 🔒 중복 방지
+        if (showThankYou) return;
+
         showThankYou = true;
 
         fadeTimer = new Timer(40, e -> {
@@ -94,7 +110,8 @@ public class OutroPanel extends JPanel {
                     Timer t = new Timer(3000, ev -> {
                         ((Timer) ev.getSource()).stop();
 
-                        frame.dispose(); // 기존 프레임 종료
+                        frame.dispose();
+
                         SwingUtilities.invokeLater(() -> {
                             new GameFrame().setVisible(true);
                         });
@@ -114,8 +131,8 @@ public class OutroPanel extends JPanel {
         Graphics2D g2 = (Graphics2D) g;
 
         g2.setRenderingHint(
-            RenderingHints.KEY_TEXT_ANTIALIASING,
-            RenderingHints.VALUE_TEXT_ANTIALIAS_ON
+                RenderingHints.KEY_TEXT_ANTIALIASING,
+                RenderingHints.VALUE_TEXT_ANTIALIAS_ON
         );
 
         g2.setColor(Color.WHITE);
@@ -133,10 +150,10 @@ public class OutroPanel extends JPanel {
         if (showThankYou) {
             g2.setFont(thankYouFont);
             g2.setComposite(
-                AlphaComposite.getInstance(
-                    AlphaComposite.SRC_OVER,
-                    thankYouAlpha
-                )
+                    AlphaComposite.getInstance(
+                            AlphaComposite.SRC_OVER,
+                            thankYouAlpha
+                    )
             );
 
             String msg = "Thank you for playing!";

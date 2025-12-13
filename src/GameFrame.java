@@ -1,69 +1,82 @@
-import javax.swing.JFrame;
-import javax.swing.JPanel;
-import java.awt.Dimension;
+import javax.swing.*;
+import java.awt.*;
 
 public class GameFrame extends JFrame {
 
-    private GamePanel gamePanel; 
-    private StartPanel startMenu; 
+    private GamePanel gamePanel;
+    private StartPanel startMenu;
+
+    private long gameStartTime;
+    private long lastPlayTime;
 
     public GameFrame() {
         setTitle("EscapeFromGradScov - 1F Test");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
-        
+
         gamePanel = new GamePanel();
-        
         startMenu = new StartPanel(gamePanel.getPreferredSize());
 
         setContentPane(startMenu);
-
         pack();
         setLocationRelativeTo(null);
+        setVisible(true);
 
-        startMenu.setFocusable(true);
         startMenu.requestFocusInWindow();
     }
-    
+
     public void startGame() {
         getContentPane().removeAll();
         getContentPane().add(gamePanel);
-        
+
         revalidate();
         repaint();
-        
-        gamePanel.setFocusable(true);
+
         gamePanel.requestFocusInWindow();
-        
-        javax.swing.Timer t = new javax.swing.Timer(3000, e -> showOutro());
-        t.setRepeats(false);
-        t.start();
+
+        gameStartTime = System.currentTimeMillis();
+        GameSession.get().onGameStart();
     }
-    
-    public void showStartMenu() {
+
+    public void showGameOver() {
+        lastPlayTime = System.currentTimeMillis() - gameStartTime;
+        GameSession.get().onGameOver(lastPlayTime);
+
+        setGameOverPanel();
+    }
+
+    public void setGameOverPanel() {
         getContentPane().removeAll();
-        startMenu = new StartPanel(gamePanel.getPreferredSize());
-        setContentPane(startMenu);
+        GameOverPanel panel =
+                new GameOverPanel(this, gamePanel.getPreferredSize(), lastPlayTime);
+        getContentPane().add(panel);
 
         revalidate();
         repaint();
+        panel.requestFocusInWindow();
+    }
 
-        startMenu.setFocusable(true);
-        startMenu.requestFocusInWindow();
+    public void showStats() {
+        getContentPane().removeAll();
+        StatsPanel panel =
+                new StatsPanel(this, gamePanel.getPreferredSize());
+        getContentPane().add(panel);
+
+        revalidate();
+        repaint();
+        panel.requestFocusInWindow();
     }
     
     public void showOutro() {
         getContentPane().removeAll();
 
-        Dimension size = gamePanel.getPreferredSize();
-        OutroPanel outroPanel = new OutroPanel(this, size);
+        OutroPanel outro =
+                new OutroPanel(this, gamePanel.getPreferredSize());
 
-        getContentPane().add(outroPanel);
-
+        getContentPane().add(outro);
         revalidate();
         repaint();
 
-        outroPanel.setFocusable(true);
-        outroPanel.requestFocusInWindow();
+        outro.requestFocusInWindow();
     }
 }
