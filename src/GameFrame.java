@@ -34,5 +34,36 @@ public class GameFrame extends JFrame {
         
         gamePanel.setFocusable(true);
         gamePanel.requestFocusInWindow();
+        
+        javax.swing.Timer t = new javax.swing.Timer(3000, e -> showOutro());
+        t.setRepeats(false);
+        t.start();
+    }
+    
+    public void showStartMenu() {
+        getContentPane().removeAll();
+        startMenu = new StartPanel(gamePanel.getPreferredSize());
+        setContentPane(startMenu);
+
+        revalidate();
+        repaint();
+
+        startMenu.setFocusable(true);
+        startMenu.requestFocusInWindow();
+    }
+    
+    public void showOutro() {
+        getContentPane().removeAll();
+
+        Dimension size = gamePanel.getPreferredSize();
+        OutroPanel outroPanel = new OutroPanel(this, size);
+
+        getContentPane().add(outroPanel);
+
+        revalidate();
+        repaint();
+
+        outroPanel.setFocusable(true);
+        outroPanel.requestFocusInWindow();
     }
 }
