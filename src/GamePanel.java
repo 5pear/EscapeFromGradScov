@@ -1,3 +1,4 @@
+import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -8,7 +9,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-
+import java.util.Arrays; // ✅ 추가
 import javax.swing.JPanel;
 import javax.swing.Timer;
 
@@ -20,7 +21,6 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
     private final boolean[] keys = new boolean[256];
     private final Timer timer;
 
-    // 패널(표시 영역) 크기 = 첫 맵(1F 복도) 이미지 크기
     private final int viewWidth;
     private final int viewHeight;
 
@@ -28,18 +28,15 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
         setFocusable(true);
         setFocusTraversalKeysEnabled(false);
 
-        // 1. 초기 맵 로드
         currentMap = GameMap.create(GameMap.MAP_1F_HALLWAY);
 
-        // 2. 패널 크기 = 첫 맵 크기
         viewWidth = currentMap.getWidth();
         viewHeight = currentMap.getHeight();
         setPreferredSize(new Dimension(viewWidth, viewHeight));
 
-        // 3. 플레이어 생성
         player = new Player(0, 0);
+        player.setRenderScale(0.5);
 
-        // 4. 초기 스폰 위치
         Point spawn = findSafeSpawnNear(
                 currentMap,
                 currentMap.getWidth() / 2,
@@ -49,7 +46,6 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
         player.setX(spawn.x);
         player.setY(spawn.y);
 
-        // 5. 게임 루프
         timer = new Timer(16, this);
         timer.start();
     }
@@ -61,61 +57,54 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
         requestFocusInWindow();
     }
 
-    // ===============================
-    //       렌더링(카메라 포함)
-    // ===============================
+    // ✅ 키 상태 초기화(문 이동/대화 시 keyReleased 누락 대비)
+    private void resetKeyStates() {
+        Arrays.fill(keys, false);
+    }
+
     @Override
     protected void paintComponent(Graphics g) {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
 
-        // 배경 검정
         g2.setColor(Color.BLACK);
         g2.fillRect(0, 0, viewWidth, viewHeight);
 
         int mapW = currentMap.getWidth();
         int mapH = currentMap.getHeight();
 
-        // 플레이어 중심을 카메라 중심으로 설정
         double playerCenterX = player.getX() + player.getWidth() / 2.0;
         double playerCenterY = player.getY() + player.getHeight() / 2.0;
 
         int camX = (int) Math.floor(playerCenterX - viewWidth / 2.0);
         int camY = (int) Math.floor(playerCenterY - viewHeight / 2.0);
 
-        // 맵에서 실제로 그릴 부분 (맵 내부 영역만)
         int srcX1 = Math.max(0, camX);
         int srcY1 = Math.max(0, camY);
         int srcX2 = Math.min(mapW, camX + viewWidth);
         int srcY2 = Math.min(mapH, camY + viewHeight);
 
-        // 화면에 그릴 목적지 영역
-        int dstX1 = srcX1 - camX;    // 맵이 왼쪽/위로 벗어났을 경우 보정
+        int dstX1 = srcX1 - camX;
         int dstY1 = srcY1 - camY;
         int dstX2 = dstX1 + (srcX2 - srcX1);
         int dstY2 = dstY1 + (srcY2 - srcY1);
 
-        // drawImage 한 번으로 화면에 그림 (빠름!)
         g2.drawImage(
-            currentMap.getBaseImage(),
-            dstX1, dstY1, dstX2, dstY2,
-            srcX1, srcY1, srcX2, srcY2,
-            null
+                currentMap.getBaseImage(),
+                dstX1, dstY1, dstX2, dstY2,
+                srcX1, srcY1, srcX2, srcY2,
+                null
         );
 
-        // 플레이어 렌더링 (카메라 보정)
         int drawPX = (int) Math.round(player.getX() - camX);
         int drawPY = (int) Math.round(player.getY() - camY);
 
-        g2.setColor(Color.RED);
-        g2.fillRect(drawPX, drawPY, player.getWidth(), player.getHeight());
+        g2.setComposite(AlphaComposite.SrcOver);
+        g2.setClip(null);
+
+        player.draw(g2, drawPX, drawPY);
     }
 
-
-
-    // ===============================
-    //           게임 로직
-    // ===============================
     @Override
     public void actionPerformed(ActionEvent e) {
         updatePlayer();
@@ -163,8 +152,6 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
         return (keyCode >= 0 && keyCode < keys.length && keys[keyCode]);
     }
 
-
-
     // ===============================
     //        상호작용 관련
     // ===============================
@@ -206,22 +193,23 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
 
         if (target instanceof Door door) {
             if (door.getRequiredFacing() != null &&
-                door.getRequiredFacing() != player.getFacing())
+                    door.getRequiredFacing() != player.getFacing())
                 return;
         }
 
         if (target != null) {
+            // ✅ 핵심: 대화/문 이동 전에 키 입력 상태를 리셋해서 "계속 이동" 버그 방지
+            resetKeyStates();
+
             GameContext ctx = new GameContext(currentMap, player);
             target.interact(ctx);
             currentMap = ctx.getCurrentMap();
+
+            // ✅ JOptionPane로 포커스가 빠졌다가 돌아오는 경우가 많아서 강제로 포커스 회복
+            requestFocusInWindow();
         }
     }
 
-
-
-    // ===============================
-    //       스폰 위치 계산
-    // ===============================
     private Point findSafeSpawnNear(GameMap map, int cx, int cy) {
         int pw = player.getWidth();
         int ph = player.getHeight();
@@ -239,8 +227,6 @@ public class GamePanel extends JPanel implements KeyListener, ActionListener {
 
         return new Point(cx, cy);
     }
-
-
 
     // ===============================
     //        키 입력 처리

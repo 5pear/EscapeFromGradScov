@@ -23,8 +23,8 @@ public class GameContext {
         JOptionPane.showMessageDialog(null, text);
     }
 
-    // 문/상호작용에서 맵 교체 시 호출
     public void changeMap(String targetMapId) {
+        String fromMapId = currentMap.getMapId();
         currentMap = GameMap.create(targetMapId);
 
         int pw = player.getWidth();
@@ -34,19 +34,38 @@ public class GameContext {
         int baseY;
 
         if (GameMap.MAP_1F_HALLWAY.equals(targetMapId)) {
-            // 101호에서 복도로 나올 때 → 복도 101호 문 앞
-            baseX = 235;
-            baseY = 310;
-            player.setFacing(Player.Facing.UP);
+            // ✅ 방 -> 복도 : 아래(Down)를 바라보게
+            if (GameMap.MAP_ROOM_101.equals(fromMapId)) {
+                baseX = 235;
+                baseY = 310;
+            } else if (GameMap.MAP_ROOM_102.equals(fromMapId)) {
+                baseX = 540;
+                baseY = 295;
+            } else if (GameMap.MAP_ROOM_103.equals(fromMapId)) {
+                baseX = 830;
+                baseY = 295;
+            } else if (GameMap.MAP_ROOM_104.equals(fromMapId)) {
+                baseX = 1220;
+                baseY = 295;
+            } else {
+                baseX = currentMap.getWidth() / 2;
+                baseY = currentMap.getHeight() / 2;
+            }
 
-        } else if (GameMap.MAP_ROOM_101.equals(targetMapId)) {
-            // 복도에서 101호로 들어갈 때 → 101호 문 앞
+            player.setFacing(Player.Facing.DOWN); // ✅ 변경(기존 UP -> DOWN)
+
+        } else if (GameMap.MAP_ROOM_101.equals(targetMapId)
+                || GameMap.MAP_ROOM_102.equals(targetMapId)
+                || GameMap.MAP_ROOM_103.equals(targetMapId)
+                || GameMap.MAP_ROOM_104.equals(targetMapId)) {
+
+            // ✅ 복도 -> 방 : 위(Up)를 바라보게
             baseX = 770;
             baseY = 900;
-            player.setFacing(Player.Facing.DOWN);
+
+            player.setFacing(Player.Facing.UP); // ✅ 변경(기존 DOWN -> UP)
 
         } else {
-            // 기타맵이 생기면 중앙
             baseX = currentMap.getWidth() / 2;
             baseY = currentMap.getHeight() / 2;
         }
@@ -56,7 +75,6 @@ public class GameContext {
         player.setY(safe.y);
     }
 
-    // 기준 좌표 근처에서 이동 가능한 지점 탐색
     private Point findSafeSpawnNear(int cx, int cy, int pw, int ph) {
         int w = currentMap.getWidth();
         int h = currentMap.getHeight();
