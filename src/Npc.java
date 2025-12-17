@@ -1,69 +1,82 @@
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import javax.swing.JOptionPane; // 입력창을 위해 필요
 
 public class Npc implements Interactable {
 
-    private String name;
     private int x, y;
-    private int width, height;
+    private int width = 40, height = 40;
+    
+    private String name;
+    private String[] conversations; 
+    private String quizQuestion;    
+    private String answer;
+    private String successMsg;
+    private String failMsg;
+    
+    // [힌트] 보상 아이템 이름 (null이면 보상 없음)
+    private String rewardItem; 
+    
+    private boolean isSolved = false; 
 
-    // 퀴즈 
-    private String question;   // 질문
-    private String answer;     // 정답
-    private String correctMsg; // 맞았을 때 대사
-    private String wrongMsg;   // 틀렸을 때 대사
-
-    // 생성자: 위치, 이름, 질문, 정답, 성공메시지, 실패메시지
-    public Npc(int x, int y, String name, String question, String answer, String correctMsg, String wrongMsg) {
+    //  생성자에 rewardItem 추가
+    public Npc(int x, int y, String name, String[] conversations, String quizQuestion, String answer, String successMsg, String failMsg, String rewardItem) {
         this.x = x;
         this.y = y;
-        this.width = 20;
-        this.height = 28;
         this.name = name;
-        
-        this.question = question;
+        this.conversations = conversations;
+        this.quizQuestion = quizQuestion;
         this.answer = answer;
-        this.correctMsg = correctMsg;
-        this.wrongMsg = wrongMsg;
+        this.successMsg = successMsg;
+        this.failMsg = failMsg;
+        this.rewardItem = rewardItem; // 받아온 아이템 이름 저장
+    }
+
+    @Override
+    public void interact(GameContext ctx) {
+        if (isSolved) {
+            ctx.getDialogueUI().showMessage(name + ": 더 할말이 남았나?");
+            return;
+        }
+
+        ctx.getDialogueUI().showSequence(conversations, () -> {
+            if (answer != null) {
+                ctx.getDialogueUI().showInput(name + ": " + quizQuestion, (userInput) -> {
+                    if (userInput.trim().equals(answer)) {
+                        isSolved = true; 
+                        
+                        // 1. 성공 메시지 출력
+                        ctx.getDialogueUI().showMessage(successMsg);
+                        
+                        // [힌트] 2. 보상 아이템이 있다면 지급!
+                        if (rewardItem != null) {
+                            ctx.getPlayer().addItem(rewardItem);
+                            // 아이템 획득 알림 메시지 추가로 띄우기
+                            ctx.getDialogueUI().showMessage("[힌트] " + rewardItem  );
+                        }
+                        
+                    } else {
+                        ctx.getDialogueUI().showMessage(failMsg);
+                    }
+                });
+            }
+        });
+    }
+
+    public void draw(Graphics2D g2, int camX, int camY) {
+        int screenX = x - camX;
+        int screenY = y - camY;
+        //해결시 색상변경(임시)나중에 이미지로 교체
+        if (isSolved) g2.setColor(Color.GRAY);
+        else g2.setColor(Color.BLUE);
+        
+        g2.fillRect(screenX, screenY, width, height);
+        g2.setColor(Color.WHITE);
+        g2.drawString(name, screenX, screenY - 5);
     }
 
     @Override
     public Rectangle getBounds() {
         return new Rectangle(x, y, width, height);
-    }
-
-    // 입력창 띄우기 및 정답 확인
-    @Override
-    public void interact(GameContext context) {
-        // 1. 입력창 띄우기
-        String input = JOptionPane.showInputDialog(null, name + ": " + question);
-
-        // 2. 취소 버튼을 눌렀거나 내용을 입력하지 않은 경우 무시
-        if (input == null || input.trim().isEmpty()) {
-            return;
-        }
-
-        // 3. 정답 비교 (공백 제거 후 확인)
-        if (input.trim().equals(answer)) {
-            // 정답인 경우
-            context.showMessage(name + ": " + correctMsg);
-        } else {
-            // 오답인 경우
-            context.showMessage(name + ": " + wrongMsg);
-        }
-    }
-
-    // 그리기 기능
-    public void draw(Graphics2D g, int camX, int camY) {
-        int screenX = x - camX;
-        int screenY = y - camY;
-
-        g.setColor(Color.BLUE);
-        g.fillRect(screenX, screenY, width, height);
-        
-        g.setColor(Color.WHITE);
-        g.drawString(name, screenX, screenY - 5);
     }
 }

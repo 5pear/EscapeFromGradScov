@@ -79,7 +79,7 @@ public class OutroPanel extends JPanel {
         credits.add("개발");
         credits.add("백승현   고현진   김도원   김지훈");
         credits.add("");
-        credits.add("맵 디자인");
+        credits.add("맵 디자인,캐릭터 디자인");
         credits.add("백승현");
         credits.add("");
         credits.add("UI");
@@ -88,7 +88,7 @@ public class OutroPanel extends JPanel {
         credits.add("사운드");
         credits.add("김도원");
         credits.add("");
-        credits.add("캐릭터 디자인");
+        credits.add("맵 상호작용");
         credits.add("고현진");
     }
 

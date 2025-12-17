@@ -14,8 +14,9 @@ public class GameFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
 
-        gamePanel = new GamePanel();
-        startMenu = new StartPanel(gamePanel.getPreferredSize());
+        gamePanel = new GamePanel(this);
+        
+        startMenu = new StartPanel(this,gamePanel.getPreferredSize());
 
         setContentPane(startMenu);
         pack();
@@ -27,6 +28,8 @@ public class GameFrame extends JFrame {
 
     public void startGame() {
         getContentPane().removeAll();
+        
+        gamePanel = new GamePanel(this);
         getContentPane().add(gamePanel);
 
         revalidate();

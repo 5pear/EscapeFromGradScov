@@ -7,6 +7,7 @@ import javax.imageio.ImageIO;
 
 public class StartPanel extends JPanel implements KeyListener {
 
+	private GameFrame parentFrame;
     private JLabel pressEnterLabel;
     private Timer blinkTimer;
     private Timer fastBlinkTimer;
@@ -29,7 +30,9 @@ public class StartPanel extends JPanel implements KeyListener {
     private JPanel textGroupPanel;
     private JPanel topPanel;
 
-    public StartPanel(Dimension size) {
+    public StartPanel(GameFrame parentFrame,Dimension size) {
+    	this.parentFrame = parentFrame;
+    	
         setPreferredSize(size);
         setLayout(new BorderLayout());
         setBackground(Color.BLACK);
