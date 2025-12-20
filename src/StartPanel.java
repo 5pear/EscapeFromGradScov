@@ -2,8 +2,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import javax.imageio.ImageIO;
 
 public class StartPanel extends JPanel implements KeyListener {
 
@@ -51,7 +49,7 @@ public class StartPanel extends JPanel implements KeyListener {
 
     private void loadIntroImage() {
         try {
-            introImage = ImageIO.read(new File("res/intro.png"));
+            introImage = ResourceUtils.loadImage("res/intro.png");
         } catch (Exception e) {
             introImage = null;
             introFinished = true;

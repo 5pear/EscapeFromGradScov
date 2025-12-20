@@ -3,10 +3,8 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import javax.imageio.ImageIO;
 
 public class GameMap {
 
@@ -80,7 +78,7 @@ public class GameMap {
         boolean maskOk = true;
 
         try {
-            baseImage = ImageIO.read(new File(basePath));
+            baseImage = ResourceUtils.loadImage(basePath);
             if (baseImage == null) throw new RuntimeException("baseImage is null");
         } catch (Exception e) {
             baseOk = false;
@@ -89,7 +87,7 @@ public class GameMap {
         }
 
         try {
-            maskImage = ImageIO.read(new File(maskPath));
+            maskImage = ResourceUtils.loadImage(maskPath);
             if (maskImage == null) throw new RuntimeException("maskImage is null");
         } catch (Exception e) {
             maskOk = false;

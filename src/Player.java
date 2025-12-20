@@ -2,9 +2,6 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.File;
-import java.io.IOException;
-import javax.imageio.ImageIO;
 
 public class Player {
 
@@ -35,10 +32,9 @@ public class Player {
 
     private static void loadSprites() {
         try {
-            File f = new File(SPRITE_SHEET_PATH);
-            System.out.println("[Player] Try file path: " + f.getAbsolutePath() + " exists=" + f.exists());
-            sheet = ImageIO.read(f);
-        } catch (IOException e) {
+            sheet = ResourceUtils.loadImage(SPRITE_SHEET_PATH);
+            if (sheet == null) throw new RuntimeException("sheet is null");
+        } catch (Exception e) {
             System.err.println("[Player] Sprite sheet load failed: " + SPRITE_SHEET_PATH);
             e.printStackTrace();
             return;
