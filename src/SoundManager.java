@@ -1,5 +1,6 @@
 import javax.sound.sampled.*;
 import java.io.File;
+import java.net.URL;
 import java.util.*;
 
 public class SoundManager {
@@ -29,7 +30,10 @@ public class SoundManager {
 
     public void play(String path, boolean bgm, boolean loop) {
         try {
-            AudioInputStream ais = AudioSystem.getAudioInputStream(new File(path));
+            URL resourceUrl = ResourceUtils.getResourceUrl(path);
+            AudioInputStream ais = (resourceUrl != null)
+                    ? AudioSystem.getAudioInputStream(resourceUrl)
+                    : AudioSystem.getAudioInputStream(new File(path));
             Clip clip = AudioSystem.getClip();
             clip.open(ais);
 
