@@ -5,33 +5,55 @@ public class GameContext {
 
     private GameMap currentMap;
     private final Player player;
+    private final DialogueUI dialogueUI;
+    
+    //  GamePanel을 제어하기 위해 저장
+    private final GamePanel gamePanel; 
 
-    public GameContext(GameMap currentMap, Player player) {
+    //  생성자에서 GamePanel 받기
+    public GameContext(GameMap currentMap, Player player, DialogueUI dialogueUI, GamePanel gamePanel) {
         this.currentMap = currentMap;
         this.player = player;
+        this.dialogueUI = dialogueUI;
+        this.gamePanel = gamePanel; 
+    }
+    // [교수] 게임 오버 발동
+    public void triggerGameOver() {
+        gamePanel.switchToGameOver();
     }
 
-    public GameMap getCurrentMap() {
-        return currentMap;
+    // [교수] 현재 맵에 NPC 추가
+    public void addInteractable(Interactable it) {
+        currentMap.addInteractable(it);
     }
 
-    public Player getPlayer() {
-        return player;
-    }
+    public GameMap getCurrentMap() { return currentMap; }
+    public Player getPlayer() { return player; }
+    public DialogueUI getDialogueUI() { return dialogueUI; }
 
     public void showMessage(String text) {
-        JOptionPane.showMessageDialog(null, text);
+        if (dialogueUI != null) dialogueUI.showMessage(text);
+        else System.out.println(text);
     }
 
     public void changeMap(String targetMapId) {
+        
+    
+        if ("OUTRO".equals(targetMapId)) {
+            gamePanel.switchToOutro(); 
+            return; 
+        }
+        
         String fromMapId = currentMap.getMapId();
+        // 일반 맵 이동 로직
         currentMap = GameMap.create(targetMapId);
 
         int pw = player.getWidth();
         int ph = player.getHeight();
+        int baseX, baseY;
 
-        int baseX;
-        int baseY;
+        
+        
 
         if (GameMap.MAP_1F_HALLWAY.equals(targetMapId)) {
             // ✅ 방 -> 복도 : 아래(Down)를 바라보게

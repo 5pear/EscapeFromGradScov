@@ -14,12 +14,14 @@ public class GameFrame extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setResizable(false);
 
-        gamePanel = new GamePanel();
-        startMenu = new StartPanel(gamePanel.getPreferredSize());
+        gamePanel = new GamePanel(this);
+        
+        startMenu = new StartPanel(this);
 
         setContentPane(startMenu);
         pack();
         setLocationRelativeTo(null);
+        setVisible(true);
 
         // ✅ Main에서 setVisible(true) 호출하므로 여기서는 호출하지 않음
         // setVisible(true);
@@ -30,6 +32,8 @@ public class GameFrame extends JFrame {
 
     public void startGame() {
         getContentPane().removeAll();
+        
+        gamePanel = new GamePanel(this);
         getContentPane().add(gamePanel);
 
         pack();
@@ -45,6 +49,7 @@ public class GameFrame extends JFrame {
     public void showGameOver() {
         lastPlayTime = System.currentTimeMillis() - gameStartTime;
         GameSession.get().onGameOver(lastPlayTime);
+
         setGameOverPanel();
     }
 
@@ -78,18 +83,18 @@ public class GameFrame extends JFrame {
         panel.requestFocusInWindow();
     }
 
+ 
+
     public void showOutro() {
         getContentPane().removeAll();
 
-        OutroPanel outro =
-                new OutroPanel(this, gamePanel.getPreferredSize());
+    
+        OutroPanel outro = new OutroPanel(this); 
 
         getContentPane().add(outro);
-
         pack();
         revalidate();
         repaint();
-
         outro.requestFocusInWindow();
     }
 }

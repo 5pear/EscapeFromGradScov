@@ -20,13 +20,13 @@ public class VolumeSlider extends JComponent {
     public VolumeSlider() {
         // ✅ 이미지가 없으면 크래시 대신 fallback로 동작
         try {
-            trackL = ResourceUtils.loadImage("res/track_left.png");
-            trackC = ResourceUtils.loadImage("res/track_center.png");
-            trackR = ResourceUtils.loadImage("res/track_right.png");
+            trackL = ResourceUtils.loadImage("/track_left.png");
+            trackC = ResourceUtils.loadImage("/track_center.png");
+            trackR = ResourceUtils.loadImage("/track_right.png");
 
-            barL = ResourceUtils.loadImage("res/bar_left.png");
-            barC = ResourceUtils.loadImage("res/bar_center.png");
-            barR = ResourceUtils.loadImage("res/bar_right.png");
+            barL = ResourceUtils.loadImage("/bar_left.png");
+            barC = ResourceUtils.loadImage("/bar_center.png");
+            barR = ResourceUtils.loadImage("/bar_right.png");
 
             useImages = (trackL != null && trackC != null && trackR != null
                     && barL != null && barC != null && barR != null);

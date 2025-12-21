@@ -5,12 +5,13 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
+import javax.imageio.ImageIO; // ✅ 추가
 
 public class GameMap {
-
-    // ✅ 표준 맵 크기(복도 기준)
-    private static final int STANDARD_W = 1536;
-    private static final int STANDARD_H = 1024;
+    
+    // 화면 해상도 (표준 크기)
+    public static final int STANDARD_W = 1280; 
+    public static final int STANDARD_H = 720;  
 
     // 맵 ID
     public static final String MAP_1F_HALLWAY = "1F_HALLWAY";
@@ -21,44 +22,45 @@ public class GameMap {
 
     private final String mapId;
 
-    private BufferedImage baseImage;
-    private BufferedImage maskImage;
-    private boolean[][] blocked;
+    private BufferedImage baseImage;   // 배경
+    private BufferedImage maskImage;   // 이동 가능 마스크
+    private boolean[][] blocked;       // true = 이동 불가
 
     private final List<Interactable> interactables = new ArrayList<>();
 
-    // 테스트 맵(더미) 크기 = 표준과 동일
+    // 테스트 맵(더미) 크기
     private static final int TEST_W = STANDARD_W;
     private static final int TEST_H = STANDARD_H;
 
     // ─────────────────────────────
-    // 팩토리
+    // 팩토리 메서드
     // ─────────────────────────────
     public static GameMap create(String mapId) {
         switch (mapId) {
             case MAP_1F_HALLWAY:
-                return new GameMap(mapId, "res/map/1Fhallway.png", "res/map/1Fmove.png");
+                return new GameMap(mapId, "/map/1Fhallway.png", "/map/1Fmove.png");
             case MAP_ROOM_101:
-                return new GameMap(mapId, "res/map/101room.png", "res/map/101roommove.png");
+                return new GameMap(mapId, "/map/101room.png", "/map/101roommove.png");
             case MAP_ROOM_102:
-                return new GameMap(mapId, "res/map/102room.png", "res/map/102roommove.png");
+                return new GameMap(mapId, "/map/102room.png", "/map/102roommove.png");
             case MAP_ROOM_103:
-                return new GameMap(mapId, "res/map/103room.png", "res/map/103roommove.png");
+                return new GameMap(mapId, "/map/103room.png", "/map/103roommove.png");
             case MAP_ROOM_104:
-                return new GameMap(mapId, "res/map/104room.png", "res/map/104roommove.png");
+                return new GameMap(mapId, "/map/104room.png", "/map/104roommove.png");
             default:
                 throw new IllegalArgumentException("Unknown map id: " + mapId);
         }
     }
 
+    // ─────────────────────────────
+    // 생성자
+    // ─────────────────────────────
     private GameMap(String mapId, String basePath, String maskPath) {
         this.mapId = mapId;
 
         // ✅ 로딩 실패 시 테스트 맵 대체
         loadImagesWithFallback(basePath, maskPath);
 
-        // ✅ (핵심) 배경/마스크를 표준 크기로 강제 통일
-        normalizeToStandardSize();
 
         // ✅ 혹시 남아있을 수 있는 미세 불일치 보정(NEAREST)
         alignMaskToBase();
@@ -78,21 +80,23 @@ public class GameMap {
         boolean maskOk = true;
 
         try {
-            baseImage = ResourceUtils.loadImage(basePath);
+            // ✅  ResourceUtils 대신 표준 ImageIO 사용
+            baseImage = ImageIO.read(getClass().getResource(basePath));
             if (baseImage == null) throw new RuntimeException("baseImage is null");
         } catch (Exception e) {
             baseOk = false;
-            System.err.println("[GameMap] Failed to load base image: " + basePath);
-            e.printStackTrace();
+            System.err.println("[GameMap] 배경 이미지 로딩 실패: " + basePath);
+            // e.printStackTrace();
         }
 
         try {
-            maskImage = ResourceUtils.loadImage(maskPath);
+            
+            maskImage = ImageIO.read(getClass().getResource(maskPath));
             if (maskImage == null) throw new RuntimeException("maskImage is null");
         } catch (Exception e) {
             maskOk = false;
-            System.err.println("[GameMap] Failed to load mask image: " + maskPath);
-            e.printStackTrace();
+            System.err.println("[GameMap] 마스크 이미지 로딩 실패: " + maskPath);
+            // e.printStackTrace();
         }
 
         if (!baseOk) {
@@ -151,24 +155,20 @@ public class GameMap {
     }
 
     // ─────────────────────────────
-    // ✅ (핵심) 표준 크기 강제 통일
+    // ✅ (사용 안함) 표준 크기 강제 통일
     // ─────────────────────────────
     private void normalizeToStandardSize() {
         int bw = baseImage.getWidth();
         int bh = baseImage.getHeight();
 
         if (bw == STANDARD_W && bh == STANDARD_H) {
-            // base가 표준이면 mask는 alignMaskToBase에서 맞춰짐
             return;
         }
 
         System.out.println("[GameMap] Normalize map size for " + mapId +
                 " : " + bw + "x" + bh + " -> " + STANDARD_W + "x" + STANDARD_H);
 
-        // ✅ 배경은 보기 좋게 BILINEAR(부드럽게)
         baseImage = resizeImage(baseImage, STANDARD_W, STANDARD_H, false);
-
-        // ✅ 마스크는 색이 깨지면 안 됨(빨강/검정 판정) → NEAREST
         maskImage = resizeImage(maskImage, STANDARD_W, STANDARD_H, true);
     }
 
@@ -196,8 +196,7 @@ public class GameMap {
 
         if (bw == mw && bh == mh) return;
 
-        System.out.println("[정보] 마스크 크기(" + mw + "x" + mh +
-                ")를 배경 크기(" + bw + "x" + bh + ")에 맞게 리사이즈합니다.");
+        // System.out.println("[정보] 마스크 크기를 배경 크기에 맞게 리사이즈합니다.");
 
         BufferedImage resized = new BufferedImage(bw, bh, BufferedImage.TYPE_INT_ARGB);
         Graphics2D g = resized.createGraphics();
@@ -310,23 +309,137 @@ public class GameMap {
                     "104호 교실로 들어간다.",
                     Player.Facing.UP
             ));
+            
+            interactables.add(new PasswordDoor(
+            		640, 700,   // x, y
+                    150, 60,    // width, height
+                    "OUTRO",    // 이동할 맵 ID (엔딩 화면용 맵이 있다면 그것을 입력)
+                    "1588",     // ★ 비밀번호
+                    "비밀번호를 입력하라." // 힌트 메시지
+                ));
+          
+        } 
+        
+        // 2. 101호 (수학과 교수 방)
+        else if (MAP_ROOM_101.equals(mapId)) {
+            // 복도로 나가는 문 (공통)
+            addHallwayDoor();
 
-        } else if (MAP_ROOM_101.equals(mapId)
-                || MAP_ROOM_102.equals(mapId)
-                || MAP_ROOM_103.equals(mapId)
-                || MAP_ROOM_104.equals(mapId)) {
+            // [NPC] 수학과 교수         
+            Npc mathProf = new Npc(
+                    400, 200,
+                    "수학과 교수",
+                    new String[] {
+                        "수학과 교수: 공사 소음 때문에 집중이 안 되는군.",
+                        "수학과 교수: 그래도… 들어왔으면 규칙은 지켜.",
+                        "수학과 교수: 문제 하나. 값만 구해 와"
+                    },
+                    "E ={((-√144+((9×9)-2×(13×13)))^2+1)^0}+{0×((999-101×97)+((1+2+50)-(25×51))}의 정답은?", 
+                    "1",
+                    "아예 멍청이는 아니군",
+                    "자네는 지능이 참 낮군",
+                    "첫번째 자리수는 1이야"
+            );
+            // ✅ 이미지를 설정합니다.
+            mathProf.setCustomImage("/character/professor1.png");
+            // 이미지 크기  조절
+            mathProf.setSize(200, 200);
+            // ✅ 리스트에 추가합니다.
+            interactables.add(mathProf);
+            
+        }
+        
+        
+        
+        // 4. 102호 (화학과 조교 방)
+        else if (MAP_ROOM_102.equals(mapId)) {
+            addHallwayDoor();
 
-            // 방 → 복도 문(동일)
-            interactables.add(new Door(
-                    675, 900, 190, 60,
-                    MAP_1F_HALLWAY,
-                    "복도로 나간다.",
-                    Player.Facing.DOWN
-            ));
+            // [NPC] 화학과 조교
+            Npc chemAsst = new Npc(
+                    400, 200,
+                    "화학과 조교",
+                    new String[] { "화학과 조교: 텅 빈 컴퓨터실인데… 화학식만 남아있네. 딱 하나만 맞혀"                   		
+                    },
+                    "CuSO₄ · □H₂O 여기서 **□**에 들어갈 숫자는 뭐지?", 
+                    "5",
+                    "훌륭하군.",
+                    "공부 좀 더 하게.",
+                    "두번째 자리수는 5야"
+            );
+            // ✅ 이미지 설정
+            chemAsst.setCustomImage("/character/professor2.png");
+            chemAsst.setSize(200, 200);
+            // ✅ 리스트 추가
+            interactables.add(chemAsst);
+        }
+        
+     // 3. 103호 (영어 교수 방 )
+        else if (MAP_ROOM_103.equals(mapId)) {
+            addHallwayDoor();
+
+            // [NPC] 영어 교수 
+            Npc engProf = new Npc(
+                    700, 150,
+                    "영문과 교수",
+                    new String[] { "영어 교수: Hello there.",
+                    		"영어 교수: Do you speak English?" 
+                    },
+                    "사과는 영어로?", 
+                    "apple",
+                    "Great job!",
+                    "No, try again.",
+                    "Eight"
+            );
+            // ✅ 이미지 설정
+            engProf.setCustomImage("/character/professor3.png");
+            engProf.setSize(200, 200);
+            // ✅ 리스트 추가
+            interactables.add(engProf);
+        }
+        
+        // 5. 104호 (???)
+        else if (MAP_ROOM_104.equals(mapId)) {
+            addHallwayDoor();
+            
+         // [NPC] 대학원생
+            Npc student = new Npc(
+                    650, 750,
+                    "???",
+                    new String[] { "???: 너도 갇혔구나.이곳에서는 한발자국도 못움직여" ,
+                    		"???:내가 마지막 자리 비번을 알고 있다",
+                    		"???:그냥은 못주지 "
+                    		
+                    },
+                    "컴공과 대학원생:CPU와 주기억장치의 속도차이를 보완하기 위한 기억장치는??", 
+                    "캐시메모리",
+                    "정답이야",
+                    "아직 탈출할 준비가 덜 됬군",
+                    "1바이트"
+            );
+         // ✅ 이미지 설정
+            student.setCustomImage("/character/student.png");
+            student.setSize(200, 200);
+            // ✅ 리스트 추가
+            interactables.add(student);
         }
     }
 
-    // ────────── getter ──────────
+    // 모든 방에서 '복도로 나가는 문' 위치가 같다면 이 메서드를 활용
+    private void addHallwayDoor() {
+        interactables.add(new Door(
+                675, 900, 190, 60,
+                MAP_1F_HALLWAY,
+                "복도로 나간다.",
+                Player.Facing.DOWN
+        ));
+    }
+       
+    
+
+    // ─────────────────────────────
+    // getter
+    // ─────────────────────────────
     public BufferedImage getBaseImage() { return baseImage; }
     public int getWidth() { return baseImage.getWidth(); }
     public int getHeight() { return baseImage.getHeight(); }
@@ -336,6 +449,15 @@ public class GameMap {
         return blocked[y][x];
     }
 
-    public List<Interactable> getInteractables() { return interactables; }
-    public String getMapId() { return mapId; }
+    public List<Interactable> getInteractables() {
+        return interactables;
+    }
+
+    public String getMapId() {
+        return mapId;
+    }
+
+    public void addInteractable(Interactable it) {
+        interactables.add(it);
+    }
 }

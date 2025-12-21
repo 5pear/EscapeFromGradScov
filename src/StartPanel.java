@@ -2,9 +2,11 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
 
 public class StartPanel extends JPanel implements KeyListener {
 
+    private GameFrame parentFrame;
     private JLabel pressEnterLabel;
     private Timer blinkTimer;
     private Timer fastBlinkTimer;
@@ -27,13 +29,17 @@ public class StartPanel extends JPanel implements KeyListener {
     private JPanel textGroupPanel;
     private JPanel topPanel;
 
-    public StartPanel(Dimension size) {
-        setPreferredSize(size);
+    // 
+    public StartPanel(GameFrame parentFrame) {
+        this.parentFrame = parentFrame;
+        
+        // 크기는 GameFrame 크기를 따라갑니다.
+        setPreferredSize(new Dimension(1280, 720)); 
         setLayout(new BorderLayout());
         setBackground(Color.BLACK);
 
         loadIntroImage();
-        buildUi(size);
+        buildUi(); // buildUi에 size 전달 제거
         setUiVisible(false);
 
         addKeyListener(this);
@@ -49,14 +55,16 @@ public class StartPanel extends JPanel implements KeyListener {
 
     private void loadIntroImage() {
         try {
-            introImage = ResourceUtils.loadImage("res/intro.png");
+            
+            introImage = ImageIO.read(getClass().getResource("/intro.png"));
         } catch (Exception e) {
+            System.err.println("인트로 이미지를 찾을 수 없습니다: /intro.png");
             introImage = null;
             introFinished = true;
         }
     }
 
-    private void buildUi(Dimension size) {
+    private void buildUi() {
         textGroupPanel = new JPanel();
         textGroupPanel.setOpaque(false);
         textGroupPanel.setLayout(new BoxLayout(textGroupPanel, BoxLayout.Y_AXIS));
@@ -71,7 +79,8 @@ public class StartPanel extends JPanel implements KeyListener {
         pressEnterLabel.setForeground(Color.WHITE);
         pressEnterLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        textGroupPanel.add(Box.createVerticalStrut(size.height / 3));
+        // 여백 조정
+        textGroupPanel.add(Box.createVerticalStrut(200)); 
         textGroupPanel.add(titleLabel);
         textGroupPanel.add(Box.createVerticalStrut(80));
         textGroupPanel.add(pressEnterLabel);
@@ -104,7 +113,13 @@ public class StartPanel extends JPanel implements KeyListener {
     }
 
     private void startIntroScroll() {
-    	SoundManager.get().play("res/sound/introsound.wav", true, true);
+        // ✅ [수정 3] SoundManager가 없어도 에러 안 나도록 예외처리
+        try {
+            SoundManager.get().play("/sound/introsound.wav", true, true);
+        } catch (Exception e) {
+            // 사운드 파일이 없거나 매니저가 없으면 무시하고 넘어감
+        }
+
         if (introImage == null) {
             introFinished = true;
             setUiVisible(true);
@@ -112,8 +127,8 @@ public class StartPanel extends JPanel implements KeyListener {
             return;
         }
 
-        int panelW = getWidth();
-        int panelH = getHeight();
+        int panelW = 1280; // 고정 해상도 사용
+        int panelH = 720;
 
         float scale = (float) panelW / introImage.getWidth();
         int scaledH = Math.round(introImage.getHeight() * scale);
@@ -160,7 +175,6 @@ public class StartPanel extends JPanel implements KeyListener {
 
     @Override
     public void keyPressed(KeyEvent e) {
-
         if (!introFinished && e.getKeyCode() == KeyEvent.VK_ENTER) {
             skipIntro();
             return;
@@ -168,8 +182,12 @@ public class StartPanel extends JPanel implements KeyListener {
 
         if (introFinished && e.getKeyCode() == KeyEvent.VK_ENTER && !isEnter) {
             isEnter = true;
-            SoundManager.get().play("res/sound/start.wav", false, false);
-            SoundManager.get().stop("res/sound/introsound.wav");
+            
+            try {
+                SoundManager.get().play("/sound/start.wav", false, false);
+                SoundManager.get().stop("/sound/introsound.wav");
+            } catch (Exception ex) {}
+
             if (blinkTimer != null) blinkTimer.stop();
             startFastBlinkTransition();
         }
@@ -201,17 +219,18 @@ public class StartPanel extends JPanel implements KeyListener {
     private void startDelayAndGame() {
         new Timer(500, e -> {
             ((Timer) e.getSource()).stop();
-            JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(this);
-            if (frame instanceof GameFrame) {
-                ((GameFrame) frame).startGame();
-            }
+            parentFrame.startGame(); // GameFrame 바로 호출
         }).start();
     }
 
     private void openSettingsDialog() {
         if (!introFinished) return;
-        JFrame parent = (JFrame) SwingUtilities.getWindowAncestor(this);
-        if (parent != null) new SettingsDialog(parent).setVisible(true);
+        // SettingsDialog가 있으면 띄우고, 없으면 에러 방지
+        try {
+            new SettingsDialog(parentFrame).setVisible(true);
+        } catch (Exception e) {
+            System.out.println("설정 창(SettingsDialog) 파일을 찾을 수 없습니다.");
+        }
     }
 
     @Override public void keyTyped(KeyEvent e) {}

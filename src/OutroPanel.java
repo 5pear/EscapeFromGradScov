@@ -24,13 +24,15 @@ public class OutroPanel extends JPanel {
 
     private final int lineGap = 50;
 
-    public OutroPanel(GameFrame frame, Dimension size) {
-        setPreferredSize(size);
+    // ✅ [수정] 생성자에서 Dimension size 파라미터 제거
+    public OutroPanel(GameFrame frame) {
+        // 크기는 1280x720 고정
+        setPreferredSize(new Dimension(1280, 720));
         setBackground(Color.BLACK);
         setFocusable(true);
 
         initCredits();
-        yOffset = size.height + 50;
+        yOffset = 720 + 50; // 화면 아래에서 시작
 
         scrollTimer = new Timer(16, e -> {
             yOffset -= fast ? 6 : speed;
@@ -44,28 +46,19 @@ public class OutroPanel extends JPanel {
         });
         scrollTimer.start();
 
+        // 마우스/키보드 누르면 빨리 감기
         addMouseListener(new MouseAdapter() {
             @Override
-            public void mousePressed(MouseEvent e) {
-                fast = true;
-            }
-
+            public void mousePressed(MouseEvent e) { fast = true; }
             @Override
-            public void mouseReleased(MouseEvent e) {
-                fast = false;
-            }
+            public void mouseReleased(MouseEvent e) { fast = false; }
         });
 
         addKeyListener(new KeyAdapter() {
             @Override
-            public void keyPressed(KeyEvent e) {
-                fast = true;
-            }
-
+            public void keyPressed(KeyEvent e) { fast = true; }
             @Override
-            public void keyReleased(KeyEvent e) {
-                fast = false;
-            }
+            public void keyReleased(KeyEvent e) { fast = false; }
         });
     }
 
@@ -74,27 +67,26 @@ public class OutroPanel extends JPanel {
         credits.add("사연 있는 남자들");
         credits.add("");
         credits.add("기획");
-        credits.add("백승현   고현진   김도원   김지훈");
+        credits.add("백승현    고현진    김도원    김지훈");
         credits.add("");
         credits.add("개발");
-        credits.add("백승현   고현진   김도원   김지훈");
+        credits.add("백승현    고현진    김도원    김지훈");
         credits.add("");
-        credits.add("맵 디자인");
+        credits.add("캐릭터 디자인,맵 디자인,캐릭터 움직임");
         credits.add("백승현");
         credits.add("");
-        credits.add("UI");
+        credits.add("인트로,아웃트로,설정창");
         credits.add("김지훈");
         credits.add("");
         credits.add("사운드");
         credits.add("김도원");
         credits.add("");
-        credits.add("캐릭터 디자인");
+        credits.add("NPC 디자인,상호작용");
         credits.add("고현진");
     }
 
     private void startThankYou(GameFrame frame) {
         if (showThankYou) return;
-
         showThankYou = true;
 
         fadeTimer = new Timer(40, e -> {
@@ -106,12 +98,10 @@ public class OutroPanel extends JPanel {
 
                 if (!restartTriggered) {
                     restartTriggered = true;
-
+                    // 3초 뒤에 게임 재시작
                     Timer t = new Timer(3000, ev -> {
                         ((Timer) ev.getSource()).stop();
-
                         frame.dispose();
-
                         SwingUtilities.invokeLater(() -> {
                             new GameFrame().setVisible(true);
                         });
@@ -130,10 +120,7 @@ public class OutroPanel extends JPanel {
         super.paintComponent(g);
         Graphics2D g2 = (Graphics2D) g;
 
-        g2.setRenderingHint(
-                RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON
-        );
+        g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 
         g2.setColor(Color.WHITE);
         g2.setFont(creditFont);
@@ -149,12 +136,7 @@ public class OutroPanel extends JPanel {
 
         if (showThankYou) {
             g2.setFont(thankYouFont);
-            g2.setComposite(
-                    AlphaComposite.getInstance(
-                            AlphaComposite.SRC_OVER,
-                            thankYouAlpha
-                    )
-            );
+            g2.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, thankYouAlpha));
 
             String msg = "Thank you for playing!";
             FontMetrics fm = g2.getFontMetrics();

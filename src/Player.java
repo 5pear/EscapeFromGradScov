@@ -2,6 +2,7 @@ import java.awt.Graphics2D;
 import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO; // ✅ 추가됨
 
 public class Player {
 
@@ -16,7 +17,8 @@ public class Player {
     private final double speed = 9.0;
     private Facing facing = Facing.DOWN;
 
-    private static final String SPRITE_SHEET_PATH = "res/character/player.png";
+    // ✅ [경로 확인] res 폴더가 소스 폴더이므로 "/character/player.png"가 맞습니다.
+    private static final String SPRITE_SHEET_PATH = "/character/player.png";
 
     private static BufferedImage sheet;
     private static BufferedImage spriteDown;
@@ -32,26 +34,30 @@ public class Player {
 
     private static void loadSprites() {
         try {
-            sheet = ResourceUtils.loadImage(SPRITE_SHEET_PATH);
+            // ✅ [수정 1] ResourceUtils 대신 표준 ImageIO 사용 (가장 안전함)
+            sheet = ImageIO.read(Player.class.getResource(SPRITE_SHEET_PATH));
+            
             if (sheet == null) throw new RuntimeException("sheet is null");
         } catch (Exception e) {
-            System.err.println("[Player] Sprite sheet load failed: " + SPRITE_SHEET_PATH);
-            e.printStackTrace();
+            System.err.println("[Player] 이미지 로딩 실패!");
+            System.err.println("경로 확인 필요: " + SPRITE_SHEET_PATH);
+            // e.printStackTrace(); // 에러 메시지가 너무 길면 주석 처리
             return;
         }
 
-        System.out.println("[Player] sheet=" + sheet.getWidth() + "x" + sheet.getHeight()
-                + " hasAlpha=" + sheet.getColorModel().hasAlpha());
+        // 디버깅용 출력 (나중에 지워도 됨)
+        // System.out.println("[Player] sheet loaded: " + sheet.getWidth() + "x" + sheet.getHeight());
 
         try {
+            // ✅ 좌표는 보내주신 코드 그대로 유지했습니다.
             spriteDown = crop(sheet, 55, 390, 270, 735);
-            spriteUp   = crop(sheet, 350, 390, 565, 730);
+            spriteUp    = crop(sheet, 350, 390, 565, 730);
             spriteLeft = crop(sheet, 630, 40, 825, 375);
             spriteRight = flipHorizontally(spriteLeft);
 
-            System.out.println("[Player] Sprite crop success.");
+            System.out.println("[Player] Sprites loaded successfully.");
         } catch (Exception e) {
-            System.err.println("[Player] Crop failed. (좌표/이미지 크기 확인 필요)");
+            System.err.println("[Player] 이미지 자르기(Crop) 실패. 좌표가 이미지 크기를 벗어났을 수 있습니다.");
             e.printStackTrace();
         }
     }
@@ -92,6 +98,8 @@ public class Player {
     public void draw(Graphics2D g2, int drawX, int drawY) {
         BufferedImage img = getCurrentSprite();
         if (img == null) {
+            // 이미지가 없으면 빨간 박스로라도 표시
+            g2.setColor(java.awt.Color.RED);
             g2.fillRect(drawX, drawY, width, height);
             return;
         }
@@ -103,6 +111,12 @@ public class Player {
         int renderY = drawY - (rh - height);
 
         g2.drawImage(img, renderX, renderY, rw, rh, null);
+    }
+
+    // ✅ [수정 2] NPC가 아이템을 줄 때 필요한 메서드 추가 (없으면 에러 남)
+    public void addItem(String item) {
+        System.out.println("[Player] 아이템 획득: " + item);
+        // 나중에 인벤토리 리스트에 추가하는 코드를 여기에 작성하면 됩니다.
     }
 
     public void setRenderScale(double scale) {
@@ -133,6 +147,8 @@ public class Player {
     public Facing getFacing() { return facing; }
 
     public void setFacing(Facing facing) {
-        if (facing != null) this.facing = facing;
+        if (facing != null) {
+            this.facing = facing;
+        }
     }
 }

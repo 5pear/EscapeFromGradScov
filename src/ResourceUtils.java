@@ -23,8 +23,8 @@ public class ResourceUtils {
         String normalized = normalizePath(path);
         URL url = cl.getResource(normalized);
         if (url != null) return url;
-        if (normalized.startsWith("res/")) {
-            return cl.getResource(normalized.substring("res/".length()));
+        if (normalized.startsWith("/")) {
+            return cl.getResource(normalized.substring("/".length()));
         }
         return null;
     }
@@ -34,8 +34,8 @@ public class ResourceUtils {
         String normalized = normalizePath(path);
         InputStream stream = cl.getResourceAsStream(normalized);
         if (stream != null) return stream;
-        if (normalized.startsWith("res/")) {
-            stream = cl.getResourceAsStream(normalized.substring("res/".length()));
+        if (normalized.startsWith("/")) {
+            stream = cl.getResourceAsStream(normalized.substring("/".length()));
             if (stream != null) return stream;
         }
         File file = new File(path);
