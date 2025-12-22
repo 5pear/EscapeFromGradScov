@@ -10,8 +10,8 @@ import javax.imageio.ImageIO; // ✅ 추가
 public class GameMap {
     
     // 화면 해상도 (표준 크기)
-    public static final int STANDARD_W = 1280; 
-    public static final int STANDARD_H = 720;  
+    public static final int STANDARD_W = 1536; 
+    public static final int STANDARD_H = 1024;  
 
     // 맵 ID
     public static final String MAP_1F_HALLWAY = "1F_HALLWAY";
@@ -61,6 +61,8 @@ public class GameMap {
         // ✅ 로딩 실패 시 테스트 맵 대체
         loadImagesWithFallback(basePath, maskPath);
 
+        // ✅ 표준 해상도로 통일 (배경/마스크 둘 다)
+        normalizeToStandardSize();
 
         // ✅ 혹시 남아있을 수 있는 미세 불일치 보정(NEAREST)
         alignMaskToBase();
@@ -155,7 +157,7 @@ public class GameMap {
     }
 
     // ─────────────────────────────
-    // ✅ (사용 안함) 표준 크기 강제 통일
+    // ✅ 표준 크기 강제 통일
     // ─────────────────────────────
     private void normalizeToStandardSize() {
         int bw = baseImage.getWidth();
