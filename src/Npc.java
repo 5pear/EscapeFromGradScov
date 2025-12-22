@@ -23,6 +23,7 @@ public class Npc implements Interactable {
 
     private boolean isSolved = false;
     private BufferedImage customImage; 
+    private Rectangle interactionBounds;
 
     public Npc(int x, int y, String name, String[] chats, 
                String quiz, String ans, String sMsg, String fMsg, String hint) {
@@ -52,6 +53,10 @@ public class Npc implements Interactable {
     public void setSize(int w, int h) {
         this.width = w;
         this.height = h;
+    }
+
+    public void setInteractionBounds(Rectangle bounds) {
+        this.interactionBounds = bounds;
     }
 
     @Override
@@ -98,6 +103,9 @@ public class Npc implements Interactable {
 
     @Override
     public Rectangle getBounds() {
+        if (interactionBounds != null) {
+            return interactionBounds;
+        }
         return new Rectangle(x, y, width, height);
     }
 }

@@ -25,6 +25,8 @@ public class GameMap {
     private BufferedImage baseImage;   // 배경
     private BufferedImage maskImage;   // 이동 가능 마스크
     private boolean[][] blocked;       // true = 이동 불가
+    private int originalBaseWidth;
+    private int originalBaseHeight;
 
     private final List<Interactable> interactables = new ArrayList<>();
 
@@ -60,6 +62,10 @@ public class GameMap {
 
         // ✅ 로딩 실패 시 테스트 맵 대체
         loadImagesWithFallback(basePath, maskPath);
+
+        // ✅ 원본 맵 크기 보관
+        originalBaseWidth = baseImage.getWidth();
+        originalBaseHeight = baseImage.getHeight();
 
         // ✅ 표준 해상도로 통일 (배경/마스크 둘 다)
         normalizeToStandardSize();
@@ -185,6 +191,14 @@ public class GameMap {
         g.drawImage(src, 0, 0, tw, th, null);
         g.dispose();
         return out;
+    }
+
+    private int scaleX(int x) {
+        return (int) Math.round(x * (STANDARD_W / (double) originalBaseWidth));
+    }
+
+    private int scaleY(int y) {
+        return (int) Math.round(y * (STANDARD_H / (double) originalBaseHeight));
     }
 
     // ─────────────────────────────
@@ -406,7 +420,7 @@ public class GameMap {
             
          // [NPC] 대학원생
             Npc student = new Npc(
-                    650, 750,
+                    scaleX(650), scaleY(750),
                     "???",
                     new String[] { "???: 너도 갇혔구나.이곳에서는 한발자국도 못움직여" ,
                     		"???:내가 마지막 자리 비번을 알고 있다",
@@ -422,6 +436,12 @@ public class GameMap {
          // ✅ 이미지 설정
             student.setCustomImage("/character/student.png");
             student.setSize(200, 200);
+            student.setInteractionBounds(new java.awt.Rectangle(
+                    0,
+                    0,
+                    getWidth(),
+                    scaleY(500)
+            ));
             // ✅ 리스트 추가
             interactables.add(student);
         }
